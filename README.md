@@ -1,59 +1,97 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Atividade - Desenvolvimento distribuido de API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API Laravel para cadastro de clientes, chamados, status e itens de estoque. O login usa JWT e a consulta de CEP é processada por uma fila.
 
-## About Laravel
+## Instalação e banco de dados
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Requisitos: PHP 8.5, Composer e MySQL. Crie o banco configurado em `DB_DATABASE` no `.env`.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+No PowerShell:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```powershell
+composer install
+Copy-Item .env.example .env # somente se o arquivo .env ainda não existir
+```
 
-## Learning Laravel
+Configure no `.env` o acesso ao MySQL (`DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` e `DB_PASSWORD`). Depois execute:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```powershell
+php artisan key:generate # somente se APP_KEY estiver vazio
+php artisan jwt:secret # somente se JWT_SECRET estiver vazio
+php artisan config:clear
+php artisan migrate --seed
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+O seeder cria o usuário de demonstração `admin@email.com`, senha `admin`, e os dados iniciais. 
 
-## Laravel Sponsors
+## Iniciar a API e a fila
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```powershell
+php artisan serve
+```
 
-### Premium Partners
+```powershell
+php artisan queue:work
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+A API fica em `http://127.0.0.1:8000`. 
+O worker processa a consulta ao ViaCEP após cadastrar ou atualizar um cliente.
 
-## Contributing
+## Testar no Postman
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Todas as rotas, exceto `POST /api/login`, precisam do Bearer token.
 
-## Code of Conduct
+### Autenticação
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+`POST http://127.0.0.1:8000/api/login`
 
-## Security Vulnerabilities
+```raw -> json
+{
+  "usuario": "admin@email.com",
+  "password": "admin"
+}
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Copie `access_token` da resposta. Nas próximas requisições, abra **Authorization → Bearer Token** e cole o token.
 
-## License
+`GET http://127.0.0.1:8000/api/me`
+`POST http://127.0.0.1:8000/api/logout`
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Status
+
+`GET http://127.0.0.1:8000/api/status`
+`GET http://127.0.0.1:8000/api/status/1`
+`POST http://127.0.0.1:8000/api/status`
+`PUT http://127.0.0.1:8000/api/status/1`
+`DELETE http://127.0.0.1:8000/api/status/1`
+
+### Clientes
+
+`POST http://127.0.0.1:8000/api/clientes`
+`GET http://127.0.0.1:8000/api/clientes`
+`GET http://127.0.0.1:8000/api/clientes/1`
+`PUT http://127.0.0.1:8000/api/clientes/1`
+`DELETE http://127.0.0.1:8000/api/clientes/1`
+
+### Estoques
+
+`POST http://127.0.0.1:8000/api/estoques`
+`GET http://127.0.0.1:8000/api/estoques`
+`GET http://127.0.0.1:8000/api/estoques/1`
+`PUT http://127.0.0.1:8000/api/estoques/1`
+`DELETE http://127.0.0.1:8000/api/estoques/1`
+
+### Chamados
+
+`POST http://127.0.0.1:8000/api/chamados`
+`GET http://127.0.0.1:8000/api/chamados`
+`GET http://127.0.0.1:8000/api/chamados/1`
+`PUT http://127.0.0.1:8000/api/chamados/1`
+`DELETE http://127.0.0.1:8000/api/chamados/1`
+
+### Uso de estoque
+
+`POST http://127.0.0.1:8000/api/usar-estoques`
+`GET http://127.0.0.1:8000/api/usar-estoques`
+`GET http://127.0.0.1:8000/api/usar-estoques/1`
+`DELETE http://127.0.0.1:8000/api/usar-estoques/1`
